@@ -1,0 +1,7 @@
+[submodule "dependencies/limine"]
+	path = dependencies/limine
+	url = https://github.com/limine-bootloader/limine.git
+	branch = binary
+[submodule "dependencies/edk2"]
+	path = dependencies/edk2
+	url = https://github.com/tianocore/edk2.git

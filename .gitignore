@@ -1,0 +1,4 @@
+target/
+disk_image.bin
+disk_image.dd
+efi_partition_dir/

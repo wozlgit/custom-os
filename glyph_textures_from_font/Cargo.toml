@@ -1,8 +1,11 @@
 [package]
-name = "custom_os"
+name = "glyph_textures_from_font"
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+fontdue = "0.8.0"
+rusttype = "0.9.3"
+glyph_textures_from_font_lib = { path = "../glyph_textures_from_font_lib" }

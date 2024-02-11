@@ -2,8 +2,7 @@
 target = "bare_metal_x86_64_target.json"
 rustflags = [
     "-C", "link-arg=--verbose", 
-    "-C", "link-arg=--script=linker_script.ld",
-    "--print", "link-args"
+    "-C", "link-arg=--script=linker_script.ld"
 ]
 
 [unstable]

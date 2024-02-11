@@ -1,0 +1,4 @@
+[package]
+name = "glyph_textures_from_font_lib"
+version = "0.1.0"
+edition = "2021"

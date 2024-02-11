@@ -14,7 +14,7 @@ build-ovmf:
 	git submodule update --init && \
 	make -C BaseTools && \
 	source edksetup.sh && \
-	cp ../../edk2_target.txt Conf/target.txt && \
+	cp ../edk2_target.txt Conf/target.txt && \
 	build
 
 clean:

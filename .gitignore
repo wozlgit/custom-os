@@ -1,6 +1,6 @@
-disk_image.bin
-disk_image.dd
-efi_partition_dir/
+kernel/disk_image.bin
+kernel/disk_image.dd
+kernel/efi_partition_dir/
 glyph_textures_from_font/font.ttf
 glyph_textures_from_font/glyph_bitmaps.bin
-**target
+target

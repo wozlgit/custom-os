@@ -40,10 +40,6 @@ impl<'a> Iterator for GlyphBitmapIterator<'a> {
     type Item = GlyphData<'a>;
     fn next(&mut self) -> Option<Self::Item> {
         let mut data_ptr = self.glyph_bitmaps_bytes.as_ptr();
-        if data_ptr as usize % 4 != 0 {
-            // Should panic here, but can't do that yet
-            return None;
-        }
         let header: &GlyphBitmapsHeader = unsafe { &*(data_ptr as *const GlyphBitmapsHeader) };
         if self.current_glyph >= header.num_glyphs {
             return None;
@@ -73,8 +69,18 @@ pub struct GlyphData<'a>{
     pub pixels: &'a [f32]
 }
 
+#[repr(u8)]
+#[derive(Debug, Clone, Copy)]
+pub enum GlyphBitmapIterError {
+    AdressUnaligned = 1
+}
+
 impl<'a> GlyphBitmapIterator<'a> {
-    pub fn new(glyph_bitmaps_bytes: &'a [u8]) -> Self {
+    pub fn new(glyph_bitmaps_bytes: &'a [u8]) -> Result<Self, GlyphBitmapIterError> {
+        if glyph_bitmaps_bytes.as_ptr() as usize % 4 != 0 {
+            // Should panic here, but can't do that yet
+            return Err(GlyphBitmapIterError::AdressUnaligned);
+        }
         let mut i = GlyphBitmapIterator {
             current_glyph: 0,
             glyph_bitmaps_bytes,
@@ -84,7 +90,7 @@ impl<'a> GlyphBitmapIterator<'a> {
         for (index, GlyphData { header, pixels: _ }) in i.clone().enumerate() {
             i.char_to_glyph_index[header.glyph as usize] = index as isize;
         }
-        i
+        Ok(i)
     }
     pub fn glyph_data(&self, glyph_char_code: char) -> Option<GlyphData<'a>> {
         let glyph_index = self.char_to_glyph_index[glyph_char_code as usize];

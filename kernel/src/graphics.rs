@@ -1,4 +1,3 @@
-use glyph_textures_from_font_lib::{GlyphData, GlyphBitmapIterator};
 use super::limine::LimineFramebuffer;
 
 #[derive(Clone)]
@@ -124,34 +123,6 @@ impl LimineFramebuffer {
             for y in 0..self.height {
                 unsafe { self.set_pixel_color_unchecked(x, y, color); }
             }
-        }
-    }
-    pub fn draw_glyph_image(&mut self, glyph_data: &GlyphData, color: &Rgb, offset_x: u64, offset_y: u64) {
-        for (index, cov) in glyph_data.pixels.iter().enumerate() {
-            if *cov < 0.001 {
-                continue;
-            }
-            let x = index % glyph_data.header.width_in_pixels as usize;
-            let y = index / glyph_data.header.width_in_pixels as usize;
-            let mut pixel_color = color.clone();
-            pixel_color.r = ((pixel_color.r as f32) * cov) as u32;
-            pixel_color.g = ((pixel_color.g as f32) * cov) as u32;
-            pixel_color.b = ((pixel_color.b as f32) * cov) as u32;
-            let pixel_color = Color::new(self, pixel_color);
-            self.set_pixel_color(x as u64 + offset_x, y as u64 + offset_y, pixel_color);
-        }
-    }
-    pub fn print_text(&mut self, color: Rgb, glyph_bitmaps: GlyphBitmapIterator) {
-        let mut offset_x = 0;
-        let mut offset_y = 0;
-        const LINE_GAP: u64 = 100;
-        for glyph_data in glyph_bitmaps {
-            if offset_x + glyph_data.header.width_in_pixels as u64 + 30 >= self.width {
-                offset_x = 0;
-                offset_y += LINE_GAP;
-            }
-            self.draw_glyph_image(&glyph_data, &color, offset_x, offset_y);
-            offset_x += glyph_data.header.advance_width as u64;
         }
     }
 }

@@ -7,5 +7,5 @@ edition = "2021"
 
 [dependencies]
 glyph_textures_from_font_lib = { path = "../glyph_textures_from_font_lib" }
-lazy_static = { version = "1.4.0", features = ["spin_no_std"] }
-spin = { version = "0.9.8", default-features = false, features = ["mutex", "spin_mutex"] }
+micromath = { version = "2.1.0", features = ["vector"] }
+spin = { version = "0.9.8", default-features = false, features = ["mutex", "spin_mutex", "lazy"] }

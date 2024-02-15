@@ -5,14 +5,18 @@ use core::{mem::size_of, slice};
 #[repr(C)]
 pub struct GlyphBitmapsHeader {
     pub num_glyphs: u16,
+    pub ascent: u32,
+    pub line_gap: u32,
     _padding: [u8; 2] // To ensure proper alignment of the pixels slice later on, because otherwise
                       // constructing the slice is undefined behaviour
 }
 
 impl GlyphBitmapsHeader {
-    pub fn new(num_glyphs: u16) -> Self {
+    pub fn new(num_glyphs: u16, ascent: u32, line_gap: u32) -> Self {
         GlyphBitmapsHeader {
             num_glyphs,
+            ascent,
+            line_gap,
             _padding: [0; 2]
         }
     }
@@ -24,7 +28,8 @@ pub struct GlyphBitmap {
     pub glyph: char,
     pub width_in_pixels: u32,
     pub height_in_pixels: u32,
-    pub advance_width: u32
+    pub advance_width: u32,
+    pub left_side_bearing: u32
     // pixels: [f32]
 }
 
@@ -100,6 +105,9 @@ impl<'a> GlyphBitmapIterator<'a> {
         else {
             return self.clone().nth(glyph_index as usize);
         }
+    }
+    pub fn header(&self) -> &GlyphBitmapsHeader {
+        unsafe { &*(self.glyph_bitmaps_bytes.as_ptr() as *const GlyphBitmapsHeader) }
     }
 }
 

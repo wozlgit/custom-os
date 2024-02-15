@@ -1,3 +1,5 @@
+use core::cmp::min;
+
 use micromath::vector::Vector2d;
 use glyph_textures_from_font_lib::{GlyphData, GlyphBitmapIterator, _AlignDummy};
 use crate::graphics::{Color, Rgb};
@@ -17,27 +19,28 @@ pub struct TextRenderer<'a> {
 
 impl<'a> TextRenderer<'a> {
     pub fn add_text(&mut self, framebuffer: &mut LimineFramebuffer, text: &str) {
-        let mut chars = text.chars();
-        let mut c = chars.next();
-        while c.is_some() {
-            let chr = unsafe { c.unwrap_unchecked() };
-
-            if chr == '\n' {
+        for c in text.chars() {
+            if c == '\n' {
                 self.new_line();
             }
             else {
-                let glyph_data = self.glyph_bitmaps.glyph_data(chr).unwrap();
+                let glyph_data = self.glyph_bitmaps.glyph_data(c).unwrap();
                 // Don't wrap around if this is the first character printed
-                if self.text_buffer_offset > 0 && (self.current_pixel_offset.x + glyph_data.header.width_in_pixels + self.horizontal_marginal) as u64 > framebuffer.width {
+                if self.text_buffer_offset > 0 &&
+                  (self.current_pixel_offset.x + glyph_data.header.width_in_pixels + self.horizontal_marginal) as u64 > framebuffer.width
+                {
                     self.new_line();
                 }
-                draw_glyph_image(framebuffer, &glyph_data, &self.color, self.current_pixel_offset.x as u64, self.current_pixel_offset.y as u64);
+                if glyph_data.header.width_in_pixels > 0 && glyph_data.header.height_in_pixels > 0 {
+                    let offset_x = self.current_pixel_offset.x + glyph_data.header.left_side_bearing;
+                    let offset_y = self.current_pixel_offset.y - min(glyph_data.header.height_in_pixels - 1, self.glyph_bitmaps.header().ascent);
+                    draw_glyph_image(framebuffer, &glyph_data, &self.color, offset_x as u64, offset_y as u64);
+                }
                 self.current_pixel_offset.x += glyph_data.header.advance_width;
             }
 
-            chr.encode_utf8(&mut self.text_buffer[self.text_buffer_offset..]);
-            self.text_buffer_offset += chr.len_utf8();
-            c = chars.next();
+            c.encode_utf8(&mut self.text_buffer[self.text_buffer_offset..]);
+            self.text_buffer_offset += c.len_utf8();
         }
     }
     fn new_line(&mut self) {
@@ -45,10 +48,12 @@ impl<'a> TextRenderer<'a> {
         self.current_pixel_offset.y += self.line_gap;
     }
     pub fn new(text_color: Rgb, line_gap: u32, horizontal_marginal: u32, base_pixel_offset: Vector2d<u32>, glyph_bitmaps: GlyphBitmapIterator<'a>) -> TextRenderer<'a> {
+        let mut base_off = base_pixel_offset;
+        base_off.y += glyph_bitmaps.header().ascent;
         TextRenderer { 
             text_buffer: [0; 4096],
-            base_pixel_offset,
-            current_pixel_offset: base_pixel_offset,
+            base_pixel_offset: base_off,
+            current_pixel_offset: base_off,
             glyph_bitmaps,
             color: text_color,
             line_gap,
@@ -99,7 +104,7 @@ pub static TEXT_RENDERER: Lazy<Mutex<TextRenderer>> = Lazy::new(|| {
             const BLINK_INTERVAL: u64 = 90000000;
             loop {
                 crate::FRAMEBUFFER.lock().fill(color);
-                crate::sleep(BLINK_INTERVAL / 2);
+                crate::sleep(BLINK_INTERVAL / 4);
                 crate::FRAMEBUFFER.lock().display_num(e as u8 as u32);
                 crate::sleep(BLINK_INTERVAL);
             }
@@ -107,9 +112,29 @@ pub static TEXT_RENDERER: Lazy<Mutex<TextRenderer>> = Lazy::new(|| {
     };
     Mutex::new(TextRenderer::new(
         Rgb { r: 255, g: 0, b: 100 },
-        145,
+        glyph_bitmaps.header().line_gap,
         10,
         Vector2d { x: 0, y: 0 },
         glyph_bitmaps
     ))
 });
+
+#[macro_export]
+macro_rules! print {
+    ($($e:expr),*) => { 
+        {
+            use core::fmt::Write;
+            core::write!(*crate::text_rendering::TEXT_RENDERER.lock(), $($e),*).unwrap()
+        }
+    }
+}
+
+#[macro_export]
+macro_rules! println {
+    ($($e:expr),*) => { 
+        {
+            use core::fmt::Write;
+            core::writeln!(*crate::text_rendering::TEXT_RENDERER.lock(), $($e),*).unwrap()
+        }
+    }
+}

@@ -11,6 +11,11 @@ macro_rules! LIMINE_FRAMEBUFFER_REQUEST_ID {
     () => { [ 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b, 0x9d5827dcd881dd75, 0xa3148604f6fab11b ] }
 }
 
+#[macro_export]
+macro_rules! LIMINE_STACK_SIZE_REQUEST_ID {
+    () => { [ 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b, 0x224ef0460a8e8926, 0xe1cb0fc25f46ea3d ] }
+}
+
 #[repr(C)]
 pub struct LimineFramebufferRequest {
     pub id: [u64; 4],
@@ -71,3 +76,18 @@ pub struct LimineVideoMode {
 unsafe impl Sync for LimineFramebufferRequest {}
 unsafe impl Sync for LimineFramebuffer {}
 unsafe impl Send for LimineFramebuffer {}
+
+#[repr(C)]
+pub struct LimineStackSizeRequest {
+    pub id: [u64; 4],
+    pub revision: u64,
+    pub response: *const LimineStackSizeResponse,
+    pub stack_size: u64
+}
+
+#[repr(C)]
+pub struct LimineStackSizeResponse {
+    pub revision: u64
+}
+
+unsafe impl Sync for LimineStackSizeRequest {}

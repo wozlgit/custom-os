@@ -6,18 +6,17 @@ use core::{mem::size_of, slice};
 pub struct GlyphBitmapsHeader {
     pub num_glyphs: u16,
     pub ascent: u32,
-    pub line_gap: u32,
-    _padding: [u8; 2] // To ensure proper alignment of the pixels slice later on, because otherwise
-                      // constructing the slice is undefined behaviour
+    pub descent: u32,
+    pub line_gap: u32
 }
 
 impl GlyphBitmapsHeader {
-    pub fn new(num_glyphs: u16, ascent: u32, line_gap: u32) -> Self {
+    pub fn new(num_glyphs: u16, ascent: u32, descent: u32, line_gap: u32) -> Self {
         GlyphBitmapsHeader {
             num_glyphs,
             ascent,
-            line_gap,
-            _padding: [0; 2]
+            descent,
+            line_gap
         }
     }
 }
@@ -83,7 +82,6 @@ pub enum GlyphBitmapIterError {
 impl<'a> GlyphBitmapIterator<'a> {
     pub fn new(glyph_bitmaps_bytes: &'a [u8]) -> Result<Self, GlyphBitmapIterError> {
         if glyph_bitmaps_bytes.as_ptr() as usize % 4 != 0 {
-            // Should panic here, but can't do that yet
             return Err(GlyphBitmapIterError::AdressUnaligned);
         }
         let mut i = GlyphBitmapIterator {

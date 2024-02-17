@@ -5,10 +5,10 @@ mod limine;
 mod graphics;
 mod text_rendering;
 
-use core::{panic::PanicInfo, ptr::null_mut};
-use limine::{LimineFramebufferRequest, LimineFramebuffer};
-use graphics::{Rgb, Color};
+use core::{panic::PanicInfo, ptr::{null_mut, null}};
+use limine::{LimineFramebufferRequest, LimineFramebuffer, LimineStackSizeRequest};
 use spin::{Mutex, Lazy};
+use graphics::{Rgb, Color};
 
 LIMINE_BASE_REVISION! { 1 }
 
@@ -17,6 +17,14 @@ static LIMINE_FB_REQUEST: LimineFramebufferRequest = LimineFramebufferRequest {
     id: LIMINE_FRAMEBUFFER_REQUEST_ID!(),
     revision: 0,
     response: null_mut()
+};
+
+#[used]
+static LIMINE_STACK_SIZE_REQUEST: LimineStackSizeRequest = LimineStackSizeRequest {
+    id: LIMINE_STACK_SIZE_REQUEST_ID!(),
+    revision: 0,
+    response: null(),
+    stack_size: 1024 * 512 // 512 KiB
 };
 
 static FRAMEBUFFER: Lazy<Mutex<&'static mut LimineFramebuffer>> = Lazy::new(|| {
@@ -41,8 +49,9 @@ static FRAMEBUFFER: Lazy<Mutex<&'static mut LimineFramebuffer>> = Lazy::new(|| {
 extern "C" fn _start() -> ! {
     let bg_color = Color::new(*FRAMEBUFFER.lock(), Rgb { r: 100, g: 255, b: 0 });
     FRAMEBUFFER.lock().fill(bg_color);
-    println!("Print newline test");
-    print!("Print test");
+    for i in 0..20 {
+        println!("Hello for the {}. time", i);
+    }
     loop {}
 }
 

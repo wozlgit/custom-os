@@ -41,7 +41,7 @@ fn main() {
     let v_metrics = font.v_metrics(font_scale);
     // Apparently some fonts provide a value in v_metrics (for some `Scale`s atleast) for line_gap,
     // and some dont. So if a value is provided there, it can be used here.
-    let header = GlyphBitmapsHeader::new(glyph_bitmaps.len() as u16, v_metrics.ascent as u32, 50);
+    let header = GlyphBitmapsHeader::new(glyph_bitmaps.len() as u16, v_metrics.ascent as u32, v_metrics.descent as u32, 50);
     let mut file = File::create("glyph_bitmaps.bin").expect("could not create file");
     file.write(struct_byte_representation(&header)).unwrap();
     for (bitmap, cov_vec) in glyph_bitmaps.into_iter() {

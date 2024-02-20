@@ -1,10 +1,11 @@
 use core::cmp::min;
 use core::str::from_utf8_unchecked;
 
-use glyph_textures_from_font_lib::{GlyphData, GlyphBitmapIterator, _AlignDummy};
+use glyph_textures_from_font_lib::{GlyphBitmapIterator, GlyphData, _AlignDummy};
+use spin::{Lazy, Mutex};
+
 use crate::graphics::{Color, Rgb};
 use crate::limine::LimineFramebuffer;
-use spin::{Lazy, Mutex};
 
 #[derive(Clone, Copy)]
 pub struct Vec2<T> {
@@ -24,12 +25,20 @@ impl<'a> TextRenderer<'a> {
         for c in text.chars() {
             c.encode_utf8(&mut self.text_buffer[self.text_buffer_offset..]);
             self.text_buffer_offset += c.len_utf8();
-            self.current_pixel_offset = draw_character(c, self.current_pixel_offset, &mut self.settings, &self.text_buffer, self.text_buffer_offset, framebuffer);
+            self.current_pixel_offset = draw_character(
+                c,
+                self.current_pixel_offset,
+                &mut self.settings,
+                &self.text_buffer,
+                self.text_buffer_offset,
+                framebuffer
+            );
         }
     }
+
     pub fn new(mut settings: TextRendererSettings<'a>) -> TextRenderer<'a> {
         settings.base_pixel_offset.y += settings.glyph_bitmaps.header().ascent as i64;
-        TextRenderer { 
+        TextRenderer {
             text_buffer: [0; 4096],
             text_buffer_offset: 0,
             current_pixel_offset: settings.base_pixel_offset,
@@ -43,7 +52,7 @@ pub struct TextRendererSettings<'a> {
     pub vertical_marginal: u32,
     pub horizontal_marginal: u32,
     pub line_gap: u32,
-    pub text_color: Rgb, 
+    pub text_color: Rgb,
     pub glyph_bitmaps: GlyphBitmapIterator<'a>
 }
 
@@ -58,23 +67,41 @@ fn draw_character(
     c: char,
     mut current_pixel_offset: Vec2<i64>,
     settings: &mut TextRendererSettings,
-    text_buffer: &[u8], text_buffer_offset: usize,
+    text_buffer: &[u8],
+    text_buffer_offset: usize,
     framebuffer: &mut LimineFramebuffer
 ) -> Vec2<i64> {
     if c == '\n' {
-        current_pixel_offset = new_line(current_pixel_offset, text_buffer, text_buffer_offset, settings, framebuffer);
+        current_pixel_offset = new_line(
+            current_pixel_offset,
+            text_buffer,
+            text_buffer_offset,
+            settings,
+            framebuffer
+        );
     }
     else {
         let glyph_data = settings.glyph_bitmaps.glyph_data(c).unwrap();
         // Don't wrap around if this is the first character on this line
-        if current_pixel_offset.x > settings.base_pixel_offset.x &&
-          current_pixel_offset.x + (glyph_data.header.width_in_pixels + settings.horizontal_marginal) as i64 > framebuffer.width as i64
+        let req_horizontal_space = (glyph_data.header.width_in_pixels + settings.horizontal_marginal) as i64;
+        if current_pixel_offset.x > settings.base_pixel_offset.x
+            && current_pixel_offset.x + req_horizontal_space > framebuffer.width as i64
         {
-            current_pixel_offset = new_line(current_pixel_offset, text_buffer, text_buffer_offset, settings, framebuffer);
+            current_pixel_offset = new_line(
+                current_pixel_offset,
+                text_buffer,
+                text_buffer_offset,
+                settings,
+                framebuffer
+            );
         }
         if glyph_data.header.width_in_pixels > 0 && glyph_data.header.height_in_pixels > 0 {
             let offset_x = current_pixel_offset.x + glyph_data.header.left_side_bearing as i64;
-            let offset_y = current_pixel_offset.y - min(glyph_data.header.height_in_pixels - 1, settings.glyph_bitmaps.header().ascent) as i64;
+            let offset_y = current_pixel_offset.y
+                - min(
+                    glyph_data.header.height_in_pixels - 1,
+                    settings.glyph_bitmaps.header().ascent
+                ) as i64;
             draw_glyph_image(framebuffer, &glyph_data, &settings.text_color, offset_x, offset_y);
         }
         current_pixel_offset.x += glyph_data.header.advance_width as i64;
@@ -84,7 +111,8 @@ fn draw_character(
 
 fn new_line(
     current_pixel_offset: Vec2<i64>,
-    text_buffer: &[u8], text_buffer_offset: usize,
+    text_buffer: &[u8],
+    text_buffer_offset: usize,
     settings: &mut TextRendererSettings,
     framebuffer: &mut LimineFramebuffer
 ) -> Vec2<i64> {
@@ -105,13 +133,20 @@ fn new_line(
         // the bytes which have been set to some character are included here, though the buffer is
         // zero initialized anyway (zero is valid UTF-8).
         let text = unsafe { from_utf8_unchecked(&text_buffer[..text_buffer_offset]) };
-        // Now draw every character on the text buffer as normal. It is impossible that this piece of code would be called
-        // again in the process, since enough space has been "allocated" such that every single
-        // pixel of all characters at the end of the text buffer fits on screen, and only some
-        // characters at the start of the text buffer will have pixels that don't fit on
-        // screen.
+        // Now draw every character on the text buffer as normal. It is impossible that this piece
+        // of code would be called again in the process, since enough space has been
+        // "allocated" such that every single pixel of all characters at the end of the text
+        // buffer fits on screen, and only some characters at the start of the text buffer
+        // will have pixels that don't fit on screen.
         for c in text.chars() {
-            new_baseline = draw_character(c, new_baseline, settings, text_buffer, text_buffer_offset, framebuffer);
+            new_baseline = draw_character(
+                c,
+                new_baseline,
+                settings,
+                text_buffer,
+                text_buffer_offset,
+                framebuffer
+            );
         }
     }
     new_baseline
@@ -121,7 +156,13 @@ fn new_line(
 /// outside the bounds of `fb`. Negative values can be passed as `offset_x` and `offset_y` to
 /// partially render the glyph, drawing every pixel that ends up having an offset inside the
 /// framebuffer.
-pub fn draw_glyph_image(fb: &mut LimineFramebuffer, glyph_data: &GlyphData, color: &Rgb, offset_x: i64, offset_y: i64) {
+pub fn draw_glyph_image(
+    fb: &mut LimineFramebuffer,
+    glyph_data: &GlyphData,
+    color: &Rgb,
+    offset_x: i64,
+    offset_y: i64
+) {
     for (index, cov) in glyph_data.pixels.iter().enumerate() {
         if *cov < 0.001 {
             continue;
@@ -145,7 +186,7 @@ pub fn draw_glyph_image(fb: &mut LimineFramebuffer, glyph_data: &GlyphData, colo
     }
 }
 
-pub static FONT_BYTES_ALIGN_DUMMY: &'static _AlignDummy<f32, [u8]> = &_AlignDummy { 
+pub static FONT_BYTES_ALIGN_DUMMY: &'static _AlignDummy<f32, [u8]> = &_AlignDummy {
     _align: [],
     bytes: *include_bytes!("../../glyph_textures_from_font/glyph_bitmaps.bin")
 };
@@ -177,7 +218,7 @@ pub static TEXT_RENDERER: Lazy<Mutex<TextRenderer>> = Lazy::new(|| {
 
 #[macro_export]
 macro_rules! print {
-    ($($e:expr),*) => { 
+    ($($e:expr),*) => {
         {
             use core::fmt::Write;
             core::write!(*crate::text_rendering::TEXT_RENDERER.lock(), $($e),*).unwrap()
@@ -187,7 +228,7 @@ macro_rules! print {
 
 #[macro_export]
 macro_rules! println {
-    ($($e:expr),*) => { 
+    ($($e:expr),*) => {
         {
             use core::fmt::Write;
             core::writeln!(*crate::text_rendering::TEXT_RENDERER.lock(), $($e),*).unwrap()

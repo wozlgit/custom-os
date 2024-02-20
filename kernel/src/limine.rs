@@ -1,19 +1,33 @@
 #[macro_export]
 macro_rules! LIMINE_BASE_REVISION {
-    ($x:expr) => { 
+    ($x:expr) => {
         #[used]
-        static _LIMINE_BASE_REVISION: [u64; 3] = [ 0xf9562b2d5c95a6c8, 0x6a7b384944536bdc, $x ];
-    }
+        static _LIMINE_BASE_REVISION: [u64; 3] = [0xf9562b2d5c95a6c8, 0x6a7b384944536bdc, $x];
+    };
 }
 
 #[macro_export]
 macro_rules! LIMINE_FRAMEBUFFER_REQUEST_ID {
-    () => { [ 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b, 0x9d5827dcd881dd75, 0xa3148604f6fab11b ] }
+    () => {
+        [
+            0xc7b1dd30df4c8b88,
+            0x0a82e883a194f07b,
+            0x9d5827dcd881dd75,
+            0xa3148604f6fab11b
+        ]
+    };
 }
 
 #[macro_export]
 macro_rules! LIMINE_STACK_SIZE_REQUEST_ID {
-    () => { [ 0xc7b1dd30df4c8b88, 0x0a82e883a194f07b, 0x224ef0460a8e8926, 0xe1cb0fc25f46ea3d ] }
+    () => {
+        [
+            0xc7b1dd30df4c8b88,
+            0x0a82e883a194f07b,
+            0x224ef0460a8e8926,
+            0xe1cb0fc25f46ea3d
+        ]
+    };
 }
 
 #[repr(C)]

@@ -1,17 +1,16 @@
-use std::{fs::File, io::Write, slice::from_raw_parts};
-use rusttype::{Font, Scale, Point, IntoGlyphId};
+use std::fs::File;
+use std::io::Write;
+use std::slice::from_raw_parts;
 
 use glyph_textures_from_font_lib::*;
+use rusttype::{Font, IntoGlyphId, Point, Scale};
 
 fn main() {
     let font_bytes = include_bytes!("../font.ttf");
     let font = Font::try_from_bytes(font_bytes).unwrap();
     let mut glyph_bitmaps: Vec<(GlyphBitmap, Vec<f32>)> = Vec::new();
     let font_scale = Scale { x: 65.0, y: 65.0 };
-    for c in (0 as char)..(255 as char) {
-        if c < ' ' || c > '~' {
-            continue;
-        }
+    for c in ' '..='~' {
         let glyph = font.glyph(c.into_glyph_id(&font));
         let glyph = glyph.scaled(font_scale);
         let h_metrics = glyph.h_metrics();
@@ -32,7 +31,8 @@ fn main() {
             println!("No bounding box for char: \'{}\' ({})", c, c as u32);
         }
 
-        let mut pixels: Vec<f32> = Vec::with_capacity((bitmap.width_in_pixels * bitmap.height_in_pixels) as usize);
+        let mut pixels: Vec<f32> =
+            Vec::with_capacity((bitmap.width_in_pixels * bitmap.height_in_pixels) as usize);
         let rasterize_cb = |_x: u32, _y: u32, coverage: f32| pixels.push(coverage);
         glyph.draw(rasterize_cb);
 
@@ -41,13 +41,22 @@ fn main() {
     let v_metrics = font.v_metrics(font_scale);
     // Apparently some fonts provide a value in v_metrics (for some `Scale`s atleast) for line_gap,
     // and some dont. So if a value is provided there, it can be used here.
-    let header = GlyphBitmapsHeader::new(glyph_bitmaps.len() as u16, v_metrics.ascent as u32, v_metrics.descent as u32, 50);
+    let header = GlyphBitmapsHeader::new(
+        glyph_bitmaps.len() as u16,
+        v_metrics.ascent as u32,
+        v_metrics.descent as u32,
+        50
+    );
     let mut file = File::create("glyph_bitmaps.bin").expect("could not create file");
     file.write(struct_byte_representation(&header)).unwrap();
     for (bitmap, cov_vec) in glyph_bitmaps.into_iter() {
         file.write(struct_byte_representation(&bitmap)).unwrap();
         unsafe {
-            file.write(from_raw_parts(cov_vec.as_ptr() as *const u8, cov_vec.len() * core::mem::size_of::<f32>())).unwrap();
+            file.write(from_raw_parts(
+                cov_vec.as_ptr() as *const u8,
+                cov_vec.len() * core::mem::size_of::<f32>()
+            ))
+            .unwrap();
         }
     }
 
@@ -56,10 +65,22 @@ fn main() {
     // invocation of this tool, not the current one!
     let font_bytes = include_bytes!("../glyph_bitmaps.bin");
     let glyphs_iter = GlyphBitmapIterator::new(font_bytes).unwrap();
-    println!("Ascent: {}, line gap: {}", glyphs_iter.header().ascent, glyphs_iter.header().line_gap);
+    println!(
+        "Ascent: {}, line gap: {}",
+        glyphs_iter.header().ascent,
+        glyphs_iter.header().line_gap
+    );
     for glyph_data in glyphs_iter {
-        println!("{}, {}, {}", glyph_data.header.width_in_pixels, glyph_data.header.height_in_pixels, glyph_data.header.left_side_bearing);
-        println!("Glyph: {} ({})", glyph_data.header.glyph, glyph_data.header.glyph as u32);
+        println!(
+            "{}, {}, {}",
+            glyph_data.header.width_in_pixels,
+            glyph_data.header.height_in_pixels,
+            glyph_data.header.left_side_bearing
+        );
+        println!(
+            "Glyph: {} ({})",
+            glyph_data.header.glyph, glyph_data.header.glyph as u32
+        );
     }
 }
 

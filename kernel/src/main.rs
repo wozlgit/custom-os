@@ -1,14 +1,16 @@
 #![no_std]
 #![no_main]
 
-mod limine;
 mod graphics;
+mod limine;
 mod text_rendering;
 
-use core::{panic::PanicInfo, ptr::{null_mut, null}};
-use limine::{LimineFramebufferRequest, LimineFramebuffer, LimineStackSizeRequest};
-use spin::{Mutex, Lazy};
-use graphics::{Rgb, Color};
+use core::panic::PanicInfo;
+use core::ptr::{null, null_mut};
+
+use graphics::{Color, Rgb};
+use limine::{LimineFramebuffer, LimineFramebufferRequest, LimineStackSizeRequest};
+use spin::{Lazy, Mutex};
 
 LIMINE_BASE_REVISION! { 1 }
 
@@ -29,8 +31,8 @@ static LIMINE_STACK_SIZE_REQUEST: LimineStackSizeRequest = LimineStackSizeReques
 
 static FRAMEBUFFER: Lazy<Mutex<&'static mut LimineFramebuffer>> = Lazy::new(|| {
     if LIMINE_FB_REQUEST.response.is_null() {
-         // ERROR
-         loop {}
+        // ERROR
+        loop {}
     }
     else {
         let limine_fb_response = unsafe { &mut *LIMINE_FB_REQUEST.response };

@@ -36,7 +36,7 @@ pub struct GlyphBitmap {
 pub struct GlyphBitmapIterator<'a> {
     current_glyph: u16,
     glyph_bitmaps_bytes: &'a [u8],
-    char_to_glyph_index: [isize; 255],
+    glyph_data_cache: [Option<GlyphData<'a>>; 255],
     current_offset: usize
 }
 
@@ -66,7 +66,7 @@ impl<'a> Iterator for GlyphBitmapIterator<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct GlyphData<'a> {
     pub header: &'a GlyphBitmap,
     pub pixels: &'a [f32]
@@ -83,25 +83,26 @@ impl<'a> GlyphBitmapIterator<'a> {
         if glyph_bitmaps_bytes.as_ptr() as usize % 4 != 0 {
             return Err(GlyphBitmapIterError::AdressUnaligned);
         }
+        const _INIT_VALUE: Option<GlyphData> = None;
         let mut i = GlyphBitmapIterator {
             current_glyph: 0,
             glyph_bitmaps_bytes,
-            char_to_glyph_index: [-1; 255],
+            glyph_data_cache: [_INIT_VALUE; 255],
             current_offset: size_of::<GlyphBitmapsHeader>()
         };
-        for (index, GlyphData { header, pixels: _ }) in i.clone().enumerate() {
-            i.char_to_glyph_index[header.glyph as usize] = index as isize;
+        for (_, glyph_data) in i.clone().enumerate() {
+            i.glyph_data_cache[glyph_data.header.glyph as usize] = Some(glyph_data.clone());
         }
         Ok(i)
     }
 
     pub fn glyph_data(&self, glyph_char_code: char) -> Option<GlyphData<'a>> {
-        let glyph_index = self.char_to_glyph_index[glyph_char_code as usize];
-        if glyph_index == -1 {
-            return None;
+        if glyph_char_code <= 255 as char {
+            self.glyph_data_cache[glyph_char_code as usize].clone()
         }
         else {
-            return self.clone().nth(glyph_index as usize);
+            self.clone()
+                .find(|glyph_data| glyph_data.header.glyph == glyph_char_code)
         }
     }
 

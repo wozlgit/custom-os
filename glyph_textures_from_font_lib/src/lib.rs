@@ -1,4 +1,5 @@
 #![no_std]
+#![feature(inline_const)]
 
 use core::mem::size_of;
 use core::slice;
@@ -83,11 +84,10 @@ impl<'a> GlyphBitmapIterator<'a> {
         if glyph_bitmaps_bytes.as_ptr() as usize % 4 != 0 {
             return Err(GlyphBitmapIterError::AdressUnaligned);
         }
-        const _INIT_VALUE: Option<GlyphData> = None;
         let mut i = GlyphBitmapIterator {
             current_glyph: 0,
             glyph_bitmaps_bytes,
-            glyph_data_cache: [_INIT_VALUE; 255],
+            glyph_data_cache: [const { None }; 255],
             current_offset: size_of::<GlyphBitmapsHeader>()
         };
         for (_, glyph_data) in i.clone().enumerate() {

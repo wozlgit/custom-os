@@ -1,14 +1,16 @@
 #![no_std]
 #![no_main]
+#![feature(abi_x86_interrupt, inline_const)]
 
 mod graphics;
+mod interrupts;
 mod limine;
 mod text_rendering;
 
+use core::arch::asm;
 use core::panic::PanicInfo;
 use core::ptr::{null, null_mut};
 
-use graphics::{Color, Rgb};
 use limine::{LimineFramebuffer, LimineFramebufferRequest, LimineStackSizeRequest};
 use spin::{Lazy, Mutex};
 
@@ -49,11 +51,12 @@ static FRAMEBUFFER: Lazy<Mutex<&'static mut LimineFramebuffer>> = Lazy::new(|| {
 
 #[no_mangle]
 extern "C" fn _start() -> ! {
-    let bg_color = Color::new(*FRAMEBUFFER.lock(), Rgb { r: 100, g: 255, b: 0 });
-    FRAMEBUFFER.lock().fill(bg_color);
-    for i in 0..20 {
-        println!("Hello for the {}. time", i);
+    println!("Interrupt test");
+    interrupts::load_idt();
+    unsafe {
+        asm!("int3");
     }
+    println!("No crash!");
     loop {}
 }
 

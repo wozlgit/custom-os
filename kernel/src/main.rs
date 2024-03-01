@@ -4,6 +4,7 @@
 
 mod graphics;
 mod interrupts;
+mod interrupts_general;
 mod limine;
 mod text_rendering;
 

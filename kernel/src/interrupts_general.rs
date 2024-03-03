@@ -1,6 +1,6 @@
 use core::arch::asm;
+use core::fmt::Debug;
 use core::ops::{Index, IndexMut};
-use core::panic;
 
 #[repr(C, align(16))]
 pub struct InterruptDescriptor {
@@ -231,9 +231,49 @@ struct Idtr {
 #[repr(C)]
 #[derive(Debug)]
 pub struct InterruptStackFrame {
-    return_ss: u16,
+    return_ss: SegmentSelector,
     return_stack_pointer: u64,
     rflags: u64,
-    return_cs: u16,
+    return_cs: SegmentSelector,
     return_address: u64
+}
+
+#[repr(transparent)]
+pub struct SegmentSelector(pub u16);
+impl Debug for SegmentSelector {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        if self.0 >> 1 == 0 {
+            return write!(f, "SegmentSelector(null selector)");
+        }
+        write!(
+            f,
+            "SegmentSelector(RPL = {}, descriptor_table = {}, descriptor_index = {})",
+            self.0 & 0b11,
+            if self.0 & 0b100 == 0 { "GDT" } else { "LDT" },
+            self.0 >> 3
+        )
+    }
+}
+
+#[repr(transparent)]
+pub struct SegmentSelectorErrorCode(pub u16);
+impl Debug for SegmentSelectorErrorCode {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        write!(
+            f,
+            "SegmentSelectorErrorCode(EXT = {}, descriptor_table = {}, descriptor_index = {})",
+            match self.0 & 0b1 {
+                0 => "internal",
+                _ => "external"
+            },
+            match self.0 & 0b10 {
+                0 => match self.0 & 0b100 {
+                    0 => "GDT",
+                    _ => "LDT"
+                },
+                _ => "IDT"
+            },
+            self.0 >> 3
+        )
+    }
 }

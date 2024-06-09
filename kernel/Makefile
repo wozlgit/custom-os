@@ -1,8 +1,12 @@
 SHELL=/bin/bash
 
 run-qemu:
-	qemu-system-x86_64 -bios dependencies/edk2/Build/OvmfX64/RELEASE_GCC/FV/OVMF.fd \
-	-net none -drive format=raw,file=disk_image.bin,media=disk
+	qemu-system-x86_64 -machine q35 -cpu max -smp 4 -accel tcg -m 256M \
+	-bios dependencies/edk2/Build/OvmfX64/RELEASE_GCC/FV/OVMF.fd \
+	-device qemu-xhci \
+	-blockdev driver=file,node-name=disk,filename=disk_image.bin \
+	-device usb-storage,drive=disk \
+	-net none
 
 build:
 	cargo build && \

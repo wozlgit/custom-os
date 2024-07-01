@@ -1,19 +1,22 @@
 #![no_std]
 #![no_main]
-#![feature(abi_x86_interrupt, inline_const)]
+#![feature(abi_x86_interrupt, inline_const, generic_const_exprs)]
 
+mod cpuid;
 mod graphics;
 mod interrupts;
 mod interrupts_general;
 mod limine;
 mod text_rendering;
 
-use core::arch::asm;
 use core::panic::PanicInfo;
 use core::ptr::{null, null_mut};
 
+use cpuid::is_cpuid_supported;
 use limine::{LimineFramebuffer, LimineFramebufferRequest, LimineStackSizeRequest};
 use spin::{Lazy, Mutex};
+
+use crate::cpuid::get_cpu_info;
 
 LIMINE_BASE_REVISION! { 1 }
 
@@ -52,12 +55,12 @@ static FRAMEBUFFER: Lazy<Mutex<&'static mut LimineFramebuffer>> = Lazy::new(|| {
 
 #[no_mangle]
 extern "C" fn _start() -> ! {
-    println!("Interrupt test");
     interrupts::load_idt();
-    unsafe {
-        asm!("int3");
+    println!("CPUID support: {}", is_cpuid_supported());
+    if is_cpuid_supported() {
+        let ci = get_cpu_info();
+        println!("{:#?}", ci);
     }
-    println!("No crash!");
     loop {}
 }
 

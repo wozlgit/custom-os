@@ -206,7 +206,7 @@ impl Index<usize> for Idt {
                  throught the Idt struct's corresponding field."
             );
         }
-        &self.user_defined[index]
+        &self.user_defined[index - 32]
     }
 }
 
@@ -218,7 +218,7 @@ impl IndexMut<usize> for Idt {
                  throught the Idt struct's corresponding field."
             );
         }
-        &mut self.user_defined[index]
+        &mut self.user_defined[index - 32]
     }
 }
 

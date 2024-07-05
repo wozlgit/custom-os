@@ -9,6 +9,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "96d30a06541fbafbc7f82ed10c06164cfbd2c401138f6addd8404629c4b16711"
 
 [[package]]
+name = "as_slice_of"
+version = "0.1.0"
+
+[[package]]
 name = "bitflags"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -19,6 +23,7 @@ name = "custom_os"
 version = "0.1.0"
 dependencies = [
  "arrayvec",
+ "as_slice_of",
  "bitflags",
  "glyph_textures_from_font_lib",
  "micromath",

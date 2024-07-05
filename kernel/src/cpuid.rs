@@ -1,9 +1,9 @@
 use core::arch::asm;
-use core::mem::{size_of, transmute};
-use core::ptr::slice_from_raw_parts;
+use core::mem::transmute;
 use core::str::from_utf8;
 
 use arrayvec::ArrayString;
+use as_slice_of::as_slice_of;
 use bitflags::bitflags;
 
 
@@ -171,16 +171,13 @@ bitflags! {
     }
 }
 
-impl AsSliceOf<u8> for CPUIDLeaf {}
-impl AsSliceOf<u32> for CPUIDLeaf {}
-
 pub fn get_cpu_info() -> CPUInfo {
     let leaf_0 = get_cpuid_leaf(0, 0);
     if !leaf_0.is_leaf_supported() {
         panic!("Required CPUID leaf not supported");
     }
     let highest_supported_basic_function = leaf_0.r_eax;
-    let leaf_bytes: &[u8; 16] = leaf_0.as_slice_of();
+    let leaf_bytes: &[u8; 16] = as_slice_of(&leaf_0);
     let s = from_utf8(&leaf_bytes[4..16]).unwrap();
     let mut vendor_id_str: ArrayString<12> = ArrayString::new_const();
     vendor_id_str.push_str(&s[0..4]);
@@ -222,20 +219,5 @@ pub fn get_cpu_info() -> CPUInfo {
         processor_type,
         local_apic_id,
         feature_flags
-    }
-}
-
-pub trait AsSliceOf<R>
-where
-    Self: Sized
-{
-    const ELEMENT_COUNT: usize = size_of::<Self>() / size_of::<R>();
-
-    /// `mem::size_of::<Self>()` must not be larger than isize::MAX, nor can the sum of
-    /// that size and the address of `self`, as per the safety requirements of `slice::from_raw_parts`.
-    fn as_slice_of(&self) -> &[R; Self::ELEMENT_COUNT] {
-        let sp =
-            slice_from_raw_parts(self as *const Self, Self::ELEMENT_COUNT) as *const [R; Self::ELEMENT_COUNT];
-        unsafe { &*sp }
     }
 }

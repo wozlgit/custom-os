@@ -11,3 +11,4 @@ bitflags = "2.5.0"
 glyph_textures_from_font_lib = { path = "../glyph_textures_from_font_lib" }
 micromath = { version = "2.1.0", features = ["vector"] }
 spin = { version = "0.9.8", default-features = false, features = ["mutex", "spin_mutex", "lazy"] }
+as_slice_of = { path = "../as_slice_of" }

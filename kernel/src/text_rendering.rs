@@ -129,9 +129,9 @@ fn new_line(
         framebuffer.fill(bg_color);
         settings.base_pixel_offset.y -= more_space_required_y;
         new_baseline = settings.base_pixel_offset;
-        // Guaranteed to be valid UTF8, since only this struct can write to the text buffer. Only
-        // the bytes which have been set to some character are included here, though the buffer is
-        // zero initialized anyway (zero is valid UTF-8).
+        // Guaranteed to be valid UTF8, since only TextRenderer's add_text() method can write to the text
+        // buffer. Only the bytes which have been set to some character are included here, though the
+        // buffer is zero initialized anyway (zero is valid UTF-8).
         let text = unsafe { from_utf8_unchecked(&text_buffer[..text_buffer_offset]) };
         // Now draw every character on the text buffer as normal. It is impossible that this piece
         // of code would be called again in the process, since enough space has been

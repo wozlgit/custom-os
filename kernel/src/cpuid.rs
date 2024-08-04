@@ -60,8 +60,8 @@ fn get_cpuid_leaf(input_eax: u32, input_ecx: u32) -> CPUIDLeaf {
     unsafe {
         // EBX can not be used as a register operand, as it is used internally by LLVM. Since registers
         // which are not specified as output operands must have the same value at the end of the
-        // asm block as they did at the start, I have to save RBX into a different register operand
-        // at the start and then restore it from there at the end.
+        // asm block as they did at the start, RBX needs to be saved into a different register operand
+        // at the start and then restored from there at the end.
         asm!(
             "mov r10, rbx",
             "mov eax, {input_eax:e}",

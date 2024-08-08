@@ -46,8 +46,7 @@ impl<'a> Iterator for GlyphBitmapIterator<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let mut data_ptr = self.glyph_bitmaps_bytes.as_ptr();
-        let header: &GlyphBitmapsHeader = unsafe { &*(data_ptr as *const GlyphBitmapsHeader) };
-        if self.current_glyph >= header.num_glyphs {
+        if self.current_glyph >= self.header().num_glyphs {
             return None;
         }
 
@@ -90,7 +89,7 @@ impl<'a> GlyphBitmapIterator<'a> {
             glyph_data_cache: [const { None }; 255],
             current_offset: size_of::<GlyphBitmapsHeader>()
         };
-        for (_, glyph_data) in i.clone().enumerate() {
+        for glyph_data in i.clone() {
             i.glyph_data_cache[glyph_data.header.glyph as usize] = Some(glyph_data.clone());
         }
         Ok(i)

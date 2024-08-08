@@ -9,3 +9,4 @@ edition = "2021"
 fontdue = "0.8.0"
 rusttype = "0.9.3"
 glyph_textures_from_font_lib = { path = "../glyph_textures_from_font_lib" }
+as_slice_of = { path = "../as_slice_of" }

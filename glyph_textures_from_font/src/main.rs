@@ -2,6 +2,7 @@ use std::fs::File;
 use std::io::Write;
 use std::slice::from_raw_parts;
 
+use as_slice_of::as_slice_of;
 use glyph_textures_from_font_lib::*;
 use rusttype::{Font, IntoGlyphId, Point, Scale};
 
@@ -48,16 +49,16 @@ fn main() {
         50
     );
     let mut file = File::create("glyph_bitmaps.bin").expect("could not create file");
-    file.write(struct_byte_representation(&header)).unwrap();
+    file.write(as_slice_of(&header)).unwrap();
     for (bitmap, cov_vec) in glyph_bitmaps.into_iter() {
-        file.write(struct_byte_representation(&bitmap)).unwrap();
-        unsafe {
-            file.write(from_raw_parts(
+        file.write(as_slice_of(&bitmap)).unwrap();
+        file.write(unsafe {
+            from_raw_parts(
                 cov_vec.as_ptr() as *const u8,
                 cov_vec.len() * core::mem::size_of::<f32>()
-            ))
-            .unwrap();
-        }
+            )
+        })
+        .unwrap();
     }
 
 
@@ -82,8 +83,4 @@ fn main() {
             glyph_data.header.glyph, glyph_data.header.glyph as u32
         );
     }
-}
-
-fn struct_byte_representation<T: Sized>(s: &T) -> &[u8] {
-    unsafe { from_raw_parts(s as *const T as *const u8, core::mem::size_of::<T>()) }
 }

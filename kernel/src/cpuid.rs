@@ -88,18 +88,20 @@ fn get_cpuid_leaf(input_eax: u32, input_ecx: u32) -> CPUIDLeaf {
 #[derive(Debug)]
 pub struct CPUInfo {
     pub vendor_id_str: ArrayString<12>,
-    highest_supported_basic_function: u32,
-    stepping_id: u8,
-    model: u8,
-    family_id: u16,
-    processor_type: ProcessorType,
-    local_apic_id: u8,
-    feature_flags: CPUBasicFeatureFlags
+    pub highest_supported_basic_function: u32,
+    pub highest_supported_extended_function: u32,
+    pub stepping_id: u8,
+    pub model: u8,
+    pub family_id: u16,
+    pub processor_type: ProcessorType,
+    pub local_apic_id: u8,
+    pub feature_flags: CPUBasicFeatureFlags,
+    pub physical_adress_bit_width: u8
 }
 
 #[repr(u8)]
 #[derive(Debug)]
-enum ProcessorType {
+pub enum ProcessorType {
     OriginalOEMProcessor = 0,
     IntelOverDriveProcessor = 1,
     DualProcessor = 2,
@@ -108,7 +110,7 @@ enum ProcessorType {
 
 bitflags! {
     #[derive(Debug)]
-    struct CPUBasicFeatureFlags: u64 {
+    pub struct CPUBasicFeatureFlags: u64 {
         const SSE3 = 1u64 << 0;
         const PCLMULQDQ = 1u64 << 1;
         const DTES64 = 1u64 << 2;
@@ -210,14 +212,35 @@ pub fn get_cpu_info() -> CPUInfo {
     let local_apic_id = ((leaf_1.r_ebx >> 24) & 0x000000ff) as u8;
     let feature_flags =
         CPUBasicFeatureFlags::from_bits_retain(((leaf_1.r_edx as u64) << 32) | (leaf_1.r_ecx as u64));
+
+    let leaf_ext_0 = get_cpuid_leaf(0x80000000, 0);
+    if !leaf_ext_0.is_leaf_supported() {
+        panic!("Required CPUID leaf not supported");
+    }
+    let highest_supported_extended_function = leaf_ext_0.r_eax;
+    let physical_adress_bit_width;
+    if 0x80000008 <= highest_supported_extended_function {
+        let leaf_ext_8 = get_cpuid_leaf(0x80000008, 0);
+        if leaf_ext_8.is_leaf_supported() {
+            physical_adress_bit_width = (leaf_ext_8.r_eax & 0xff) as u8;
+        }
+        else {
+            physical_adress_bit_width = 36;
+        }
+    }
+    else {
+        physical_adress_bit_width = 36;
+    }
     CPUInfo {
         vendor_id_str,
         highest_supported_basic_function,
+        highest_supported_extended_function,
         stepping_id,
         model,
         family_id,
         processor_type,
         local_apic_id,
-        feature_flags
+        feature_flags,
+        physical_adress_bit_width
     }
 }

@@ -27,6 +27,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0942ffc6dcaadf03badf6e6a2d0228460359d5e34b57ccdc720b7382dfbd5ec5"
 
 [[package]]
+name = "as_slice_of"
+version = "0.1.0"
+
+[[package]]
 name = "cfg-if"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -46,6 +50,7 @@ dependencies = [
 name = "glyph_textures_from_font"
 version = "0.1.0"
 dependencies = [
+ "as_slice_of",
  "fontdue",
  "glyph_textures_from_font_lib",
  "rusttype",

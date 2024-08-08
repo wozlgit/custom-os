@@ -7,6 +7,8 @@ mod graphics;
 mod interrupts;
 mod interrupts_general;
 mod limine;
+mod msr;
+mod mtrr;
 mod text_rendering;
 
 use core::panic::PanicInfo;
@@ -16,7 +18,7 @@ use cpuid::is_cpuid_supported;
 use limine::{LimineFramebuffer, LimineFramebufferRequest, LimineStackSizeRequest};
 use spin::{Lazy, Mutex};
 
-use crate::cpuid::get_cpu_info;
+use crate::cpuid::{get_cpu_info, CPUBasicFeatureFlags};
 
 LIMINE_BASE_REVISION! { 1 }
 
@@ -59,7 +61,9 @@ extern "C" fn _start() -> ! {
     println!("CPUID support: {}", is_cpuid_supported());
     if is_cpuid_supported() {
         let ci = get_cpu_info();
-        println!("{:#?}", ci);
+        // println!("{:#?}", ci.physical_adress_bit_width);
+        // println!("{:x}_{:x}", ci.family_id, ci.model);
+        mtrr::print_mtrr_memory_mappings(ci);
     }
     loop {}
 }

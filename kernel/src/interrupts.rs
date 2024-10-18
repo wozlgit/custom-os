@@ -1,3 +1,4 @@
+use core::arch::asm;
 use core::panic;
 
 use spin::Lazy;
@@ -13,6 +14,7 @@ static IDT: Lazy<Idt> = Lazy::new(|| {
         .set_to_handler(general_protection_interrupt);
     idt.segment_not_present
         .set_to_handler(segment_not_present_interrupt);
+    idt.page_fault.set_to_handler(page_fault);
     idt
 });
 
@@ -55,5 +57,20 @@ extern "x86-interrupt" fn segment_not_present_interrupt(stack_frame: InterruptSt
         "EXCEPTION: Segment not present occurred! Stack frame: \n{:#?}\nError code: {:?}",
         stack_frame,
         SegmentSelectorErrorCode(error_code as u16)
+    );
+}
+
+extern "x86-interrupt" fn page_fault(stack_frame: InterruptStackFrame, error_code: u64) {
+    let reg_cr2: u64;
+    unsafe {
+        asm!(
+            "mov {cr2_contents}, CR2",
+            cr2_contents = out(reg) reg_cr2
+        );
+    }
+    panic!(
+        "EXCEPTION: Page fault occurred! Stack frame:\n{:#?}\nError code: {:b}\nAdress of memory access \
+         that generated the page fault: {:X}\n",
+        stack_frame, error_code, reg_cr2
     );
 }

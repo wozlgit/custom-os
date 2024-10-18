@@ -12,10 +12,11 @@ mod mtrr;
 mod text_rendering;
 
 use core::panic::PanicInfo;
-use core::ptr::{null, null_mut};
+use core::ptr::{self, null, null_mut};
 
 use cpuid::is_cpuid_supported;
 use limine::{LimineFramebuffer, LimineFramebufferRequest, LimineStackSizeRequest};
+use msr::read_msr_only_low_order_32bits;
 use spin::{Lazy, Mutex};
 
 use crate::cpuid::{get_cpu_info, CPUBasicFeatureFlags};
@@ -61,9 +62,27 @@ extern "C" fn _start() -> ! {
     println!("CPUID support: {}", is_cpuid_supported());
     if is_cpuid_supported() {
         let ci = get_cpu_info();
-        // println!("{:#?}", ci.physical_adress_bit_width);
+        println!("Physical address bit width: {}", ci.physical_adress_bit_width);
         // println!("{:x}_{:x}", ci.family_id, ci.model);
-        mtrr::print_mtrr_memory_mappings(ci);
+        // mtrr::print_mtrr_memory_mappings(ci);
+        let apic_supported = ci.feature_flags.contains(CPUBasicFeatureFlags::APIC);
+        println!("Feature flag APIC: {}", apic_supported);
+        if apic_supported {
+            let apic_base_msr = read_msr_only_low_order_32bits(0x1b);
+            let is_bsp = (apic_base_msr >> 8) & 0b1;
+            let enabled = (apic_base_msr >> 11) & 0b1;
+            let base_addr = apic_base_msr & 0xfffff000;
+            println!("Is BSP: {}", is_bsp);
+            println!("Is enabled: {}", enabled);
+            println!("Base adress: {:X}", base_addr);
+            let lapic_version_reg = unsafe { ptr::read(0xfee00030 as *const u32) };
+            if lapic_version_reg & 0xf0 == 0x0 {
+                println!("82489DX Discrete APIC");
+            }
+            else {
+                println!("Integrated APIC");
+            }
+        }
     }
     loop {}
 }

@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-#![feature(abi_x86_interrupt, inline_const, generic_const_exprs)]
+#![feature(abi_x86_interrupt, generic_const_exprs)]
 
 mod cpuid;
 mod graphics;

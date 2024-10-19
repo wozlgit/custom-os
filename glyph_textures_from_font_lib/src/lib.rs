@@ -1,5 +1,4 @@
 #![no_std]
-#![feature(inline_const)]
 
 use core::mem::size_of;
 use core::slice;

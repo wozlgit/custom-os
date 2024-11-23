@@ -6,7 +6,7 @@ use crate::{print, println};
 
 #[repr(u8)]
 #[derive(Debug)]
-enum MTRRMemoryType {
+pub enum MTRRMemoryType {
     Uncacheable = 0x00,
     WriteCombining = 0x01,
     WriteThrough = 0x04,

@@ -2,14 +2,14 @@
 #![no_main]
 #![feature(abi_x86_interrupt, generic_const_exprs)]
 
-mod cpuid;
-mod graphics;
-mod interrupts;
-mod interrupts_general;
-mod limine;
-mod msr;
-mod mtrr;
-mod text_rendering;
+pub mod cpuid;
+pub mod graphics;
+pub mod interrupts;
+pub mod interrupts_general;
+pub mod limine;
+pub mod msr;
+pub mod mtrr;
+pub mod text_rendering;
 
 use core::panic::PanicInfo;
 use core::ptr::{self, null, null_mut};
